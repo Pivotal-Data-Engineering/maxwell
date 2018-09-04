@@ -1,5 +1,4 @@
-<div id="maxwell-header">
-</div>
+# Maxwell's Daemon
 
 This is Maxwell's daemon, an application that reads MySQL binlogs and writes
 row updates to Kafka, Kinesis, RabbitMQ, Google Cloud Pub/Sub, Redis (Pub/Sub
