@@ -1,7 +1,12 @@
 #!/bin/bash
 
-es_url="http://localhost:9200"
-#es_url="http://localhost:18080"
+export JAVA_HOME=/home/vcap/app/.java-buildpack/open_jdk_jre
+export PATH=$JAVA_HOME/bin:$PATH
 
-bin/maxwell --output_nulls=false --user='maxwell' --password='maxwell' --host='127.0.0.1' --producer=elasticsearch --elastic_url=$es_url
+./bin/maxwell \
+  --user=$MAXWELL_USER \
+  --password=$MAXWELL_PASSWORD \
+  --host=$MYSQL_HOST \
+  --producer=elasticsearch \
+  --elastic_url=$ELASTIC_URL
 

@@ -1,0 +1,18 @@
+---
+applications:
+- name: maxwell
+  memory: 1G
+  instances: 1
+  host: maxwell
+  path: .
+  command: bash start_maxwell.sh
+  health-check-type: process
+  buildpack: https://github.com/cloudfoundry/java-buildpack.git
+  no-route: true
+  env:
+    JBP_CONFIG_JAVA_MAIN: '{java_main_class: "DoesNotMatter"}' # Placebo for Java buildpack
+    MAXWELL_USER: <USER YOU GRANTED PERMISSION TO FOR THE BINLOGS> 
+    MAXWELL_PASSWORD: <PASSWORD FOR THIS USER>
+    MYSQL_HOST: <HOSTNAME OR IP OF YOUR MYSQL INSTANCE>
+    ELASTIC_URL: <https://YOUR_ELASTIC_SEARCH.SOMEDOMAIN>
+

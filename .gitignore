@@ -13,3 +13,4 @@ config/*.yml
 .classpath
 .project
 .settings/
+manifest.yml
