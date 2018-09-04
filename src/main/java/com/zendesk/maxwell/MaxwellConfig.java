@@ -126,6 +126,10 @@ public class MaxwellConfig extends AbstractConfig {
 	public String redisType;
 	public String javascriptFile;
 	public Scripting scripting;
+	
+	public String elasticUrl;
+	public String elasticUser;
+	public String elasticPassword;
 
 	public MaxwellConfig() { // argv is only null in tests
 		this.customProducerProperties = new Properties();
@@ -302,6 +306,12 @@ public class MaxwellConfig extends AbstractConfig {
 
 		parser.accepts( "__separator_11" );
 
+		parser.accepts( "elastic_url", "URL of Elasticsearch server" ).withRequiredArg();
+		parser.accepts( "elastic_user", "Elasticsearch user name. Default is empty string" ).withOptionalArg();
+		parser.accepts( "elastic_password", "Elasticsearch password. Default is empty string" ).withOptionalArg();
+		
+		parser.accepts( "__separator_12" );
+
 		parser.accepts( "help", "display help" ).forHelp();
 
 
@@ -404,6 +414,10 @@ public class MaxwellConfig extends AbstractConfig {
 		this.redisPubChannel	= fetchOption("redis_pub_channel", options, properties, "maxwell");
 		this.redisListKey		= fetchOption("redis_list_key", options, properties, "maxwell");
 		this.redisType			= fetchOption("redis_type", options, properties, "pubsub");
+		
+		this.elasticUrl			= fetchOption("elastic_url", options, properties, "http://localhost:9200");
+		this.elasticUser		= fetchOption("elastic_user", options, properties, "");
+		this.elasticPassword	= fetchOption("elastic_password", options, properties, "");
 
 		String kafkaBootstrapServers = fetchOption("kafka.bootstrap.servers", options, properties, null);
 		if ( kafkaBootstrapServers != null )
