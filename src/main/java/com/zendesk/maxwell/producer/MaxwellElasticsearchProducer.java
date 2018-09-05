@@ -57,7 +57,9 @@ public class MaxwellElasticsearchProducer extends AbstractProducer {
 				String url = String.format("%s/%s/%s/%s", elasticUrl, esIndex, esType, pk);
 				Map<String, Object> dataMap = mapRemoveNulls(r.getData());
 				String dataMapJSON = mapper.writeValueAsString(dataMap);
-				HttpResponse<JsonNode> jsonResponse = Unirest.put(url).header("accept", "application/json")
+				HttpResponse<JsonNode> jsonResponse = Unirest.put(url)
+						.basicAuth(elasticUser, elasticPassword)
+						.header("accept", "application/json")
 						.header("Content-Type", "application/json").body(dataMapJSON).asJson();
 				System.out.printf("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus());
 			} else if ("UPDATE".equalsIgnoreCase(op)) {
@@ -71,15 +73,19 @@ public class MaxwellElasticsearchProducer extends AbstractProducer {
 					changedDataMap.put(key, newDataMap.get(key));
 				}
 				String dataMapJSON = mapper.writeValueAsString(changedDataMap);
-				HttpResponse<JsonNode> jsonResponse = Unirest.post(url).header("accept", "application/json")
+				HttpResponse<JsonNode> jsonResponse = Unirest.post(url)
+						.basicAuth(elasticUser, elasticPassword)
+						.header("accept", "application/json")
 						.header("Content-Type", "application/json").body(dataMapJSON).asJson();
 				System.out.printf("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus());
 			} else if ("DELETE".equalsIgnoreCase(op)) {
 				String url = String.format("%s/%s/%s/%s", elasticUrl, esIndex, esType, pk);
-				HttpResponse<JsonNode> jsonResponse = Unirest.delete(url).header("accept", "application/json").asJson();
+				HttpResponse<JsonNode> jsonResponse = Unirest.delete(url)
+						.basicAuth(elasticUser, elasticPassword)
+						.header("accept", "application/json").asJson();
 				System.out.printf("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus());
 			}
-			// TODO: Handle TRUNCATE
+			// TODO: Handle TRUNCATE?  What about DROP TABLE?
 			System.out.printf("PK: %s, ES index: %s, ES type: %s, OP: %s, msg: %s\n", pk, esIndex, esType, op, msg);
 			this.succeededMessageCount.inc();
 			this.succeededMessageMeter.mark();

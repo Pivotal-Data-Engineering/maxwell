@@ -17,9 +17,12 @@ search indexing and inter-service communication.
 
 ## Steps to run as an app on Pivotal Cloud Foundry (PCF)
 
-When using a MySQL DB instance, provided by the PCF _tile_, all DB changes (so far,
-INSERT / UPDATE / DELETE), will be handled -- TRUNCATE is *not*.  Given this, if it's
-possible to use DELETE instead of TRUNCATE, that would be nice.
+### Background
+When using a MySQL DB instance, provided by the PCF _tile_, CRUD operations (minus the 'R' -- read)
+will be tracked and synchronized into Elasticsearch.  The following **caveats** do apply:
+- `TRUNCATE TABLE ...` will not clear out the Elasticsearch index.
+- Similarly, `DROP TABLE ...` will not affect the Elasticsearch index.
+- The tables in the database must have a primary key; a compound key is okay.
 
 The following illustrates how to integrate with Elasticsearch.  The relationship between
 objects in MySQL to objects in Elasticsearch is:
@@ -30,33 +33,44 @@ database | index
 table | type
 primary key | `_id`
 
-The operations carried out here rely on the tables having a primary key.
-
-1. First, create a MySQL service instance.  The resulting DB will be named `service_instance_db`
-1. You will also need access to an Elasticsearch service, potentially via the A9S Elasticsearch tile.
-1. The numbered `00_es_*.sh` scripts are meant to be guides to configuring Elasticsearch.
-1. Edit `./es_env.sh` to suit your deployment, then run `./01_es_config_analysis.sh` to set up the analysis chain for the index.
-1. Once that process completes, follow [this procedure](./MySQL_Tile_Service_Instance_Setup.md) to enable Maxwell's Daemon to access the MySQL instance's _binlog_ data.
-1. Copy `./manifest-TEMPLATE.yml` to `./manifest.yml`
-1. Edit `./manifest.yml` to suit your deployment
-1. Push the app to PCF: `cf push`
-
-## Example Elasticsearch search
-
-- Edit `./es_search.sh`, setting the value of `"query"` to match data your app will insert into MySQL.
-- Run the sample search: `./es_search.sh`
-
-## Working with an A9S Elasticsearch instance
-
-- Install the A9S Elasticsearch tile into Ops Manager
-- Create an instance of the service ([reference](https://docs.pivotal.io/partners/a9s-elasticsearch/using.html))
-- Bind an app to this service instance
-- Get the `VCAP_SERVICES` for this app, to locate the IP number and credentials
-  for the Elasticsearch service:
+### Procedure
+1. Create a MySQL service instance.  The resulting DB will, by convention, be named `service_instance_db`.
+1. Once the provisioning process completes, follow [this procedure](./MySQL_Tile_Service_Instance_Setup.md)
+   to enable Maxwell's Daemon to access the MySQL instance's _binlog_ data.  This may require assistance
+   from the operations team.
+1. Install the A9S Elasticsearch tile into Ops Manager (again, this would be the operations group).
+1. Create an instance of the service ([reference](https://docs.pivotal.io/partners/a9s-elasticsearch/using.html))
   ```
-  $ cf env whats_my_ip
-  # Where whats_my_ip is the name of the bound app
+  $ cf cs a9s-elasticsearch6 elasticsearch-single-small-ssl elastic
   ```
+1. Wait until this process finishes.  You can monitor its progress using:
+  ```
+  $ cf service elastic
+  ```
+1. Copy `./manifest-TEMPLATE.yml` to `./manifest.yml`.
+1. Edit `./manifest.yml` to suit your deployment.  This will require some MySQL related values.
+1. Push the app to PCF, but don't start it yet:
+   ```
+   $ cf push --no-start
+   ```
+1. Bind the app to the Elasticsearch instance:
+   ```
+   $ cf bs maxwell elastic
+   ```
+1. Start the app and tail its logs:
+   ```
+   $ cf start maxwell && cf logs maxwell
+   ```
+
+## FIXME / TODO
+- Solve the DNS issue:
+  ```
+  2018-09-05T14:22:19.40-0400 [APP/PROC/WEB/0] ERR 18:22:19,400 ERROR MaxwellElasticsearchProducer - Exception during put
+  2018-09-05T14:22:19.40-0400 [APP/PROC/WEB/0] ERR com.mashape.unirest.http.exceptions.UnirestException: java.net.UnknownHostException: d9709b5.service.dc1.a9s-elasticsearch-consul: Name or service not known
+  2018-09-05T14:22:19.40-0400 [APP/PROC/WEB/0] ERR 	at com.mashape.unirest.http.HttpClientHelper.request(HttpClientHelper.java:143) ~[unirest-java-1.4.9.jar:?]
+  ```
+
+## OPTIONAL steps
 - Create an SSH tunnel so it can be reached by your computer:
   ```
   $ cf ssh whats_my_ip -L 19200:10.0.12.21:9200
@@ -84,6 +98,11 @@ The operations carried out here rely on the tables having a primary key.
     "tagline" : "You Know, for Search"
   }
   ```
+
+## Example Elasticsearch search
+
+- Edit `./es_search.sh`, setting the value of `"query"` to match data your app will insert into MySQL.
+- Run the sample search: `./es_search.sh`
 
 ## Handling TRUNCATE (TODO)
 
