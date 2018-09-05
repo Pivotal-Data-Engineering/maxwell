@@ -40,13 +40,13 @@ primary key | `_id`
    from the operations team.
 1. Install the A9S Elasticsearch tile into Ops Manager (again, this would be the operations group).
 1. Create an instance of the service ([reference](https://docs.pivotal.io/partners/a9s-elasticsearch/using.html))
-  ```
-  $ cf cs a9s-elasticsearch6 elasticsearch-single-small-ssl elastic
-  ```
+   ```
+   $ cf cs a9s-elasticsearch6 elasticsearch-single-small-ssl elastic
+   ```
 1. Wait until this process finishes.  You can monitor its progress using:
-  ```
-  $ cf service elastic
-  ```
+   ```
+   $ cf service elastic
+   ```
 1. Copy `./manifest-TEMPLATE.yml` to `./manifest.yml`.
 1. Edit `./manifest.yml` to suit your deployment.  This will require some MySQL related values.
 1. Push the app to PCF, but don't start it yet:
