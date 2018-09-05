@@ -46,3 +46,46 @@ The operations carried out here rely on the tables having a primary key.
 - Edit `./es_search.sh`, setting the value of `"query"` to match data your app will insert into MySQL.
 - Run the sample search: `./es_search.sh`
 
+## Working with an A9S Elasticsearch instance
+
+- Install the A9S Elasticsearch tile into Ops Manager
+- Create an instance of the service ([reference](https://docs.pivotal.io/partners/a9s-elasticsearch/using.html))
+- Bind an app to this service instance
+- Get the `VCAP_SERVICES` for this app, to locate the IP number and credentials
+  for the Elasticsearch service:
+  ```
+  $ cf env whats_my_ip
+  # Where whats_my_ip is the name of the bound app
+  ```
+- Create an SSH tunnel so it can be reached by your computer:
+  ```
+  $ cf ssh whats_my_ip -L 19200:10.0.12.21:9200
+  # 10.0.12.21 is the IP of the Elasticsearch instance
+  # and 19200 is the port you will use locally.
+  ```
+- Try to hit that endpoint (you will see a message that authorization is required):
+  ```
+  $ curl -k https://localhost:19200
+  ```
+- Try again, but using the `username` and `password` from `VCAP_SERVICES`:
+  ```
+  $ curl --user a9s4bf0da66afa506644f116985cad9464ec8277f8d:a9s4d4e82f320c365e55ef1d49e816d6e24f34240ea -k https://localhost:19200
+  {
+    "name" : "es/0",
+    "cluster_name" : "d65d582",
+    "cluster_uuid" : "a40v9s0AQcSnqd9T1YiSAA",
+    "version" : {
+      "number" : "5.6.9",
+      "build_hash" : "877a590",
+      "build_date" : "2018-04-12T16:25:14.838Z",
+      "build_snapshot" : false,
+      "lucene_version" : "6.6.1"
+    },
+    "tagline" : "You Know, for Search"
+  }
+  ```
+
+## Handling TRUNCATE (TODO)
+
+- https://github.com/zendesk/maxwell/issues/1012
+
