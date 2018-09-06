@@ -20,23 +20,27 @@ vcap_str = os.environ.get("VCAP_SERVICES")
 if vcap_str is None:
   raise Exception("VCAP_SERVICES not found in environment variables (necessary for credentials)")
 vcap = json.loads(vcap_str)
+cacert_key = "cacrt"
 if es_service_key in vcap:
   creds = vcap[es_service_key][0]["credentials"]
-  es_url = str(creds["host"][0])
+  #es_url = str(creds["host"][0])
+  es_url = str(creds["host_ip"][0])
   es_user = str(creds["username"])
   es_password = str(creds["password"])
-  cacert = str(creds["cacrt"])
+  if cacert_key in creds:
+    cacert = str(creds[cacert_key])
 else:
   raise Exception("No A9S Elasticsearch instance bound to this app")
 
 # Install the SSL cert into the Java keystore
-cacert_file = "/tmp/a9s_cacert"
-with open(cacert_file, "w") as out:
-  out.write(cacert)
-cmd = ["keytool", "-keystore", os.environ["JAVA_HOME"] + "/lib/security/cacerts",
-  "-importcert", "-alias", "A9SES", "-file", cacert_file, "-noprompt", "-storepass", "changeit"]
-output = subprocess.check_output(cmd)
-print output
+if cacert is not None:
+  cacert_file = "/tmp/a9s_cacert"
+  with open(cacert_file, "w") as out:
+    out.write(cacert)
+  cmd = ["keytool", "-keystore", os.environ["JAVA_HOME"] + "/lib/security/cacerts",
+    "-importcert", "-alias", "A9SES", "-file", cacert_file, "-noprompt", "-storepass", "changeit"]
+  output = subprocess.check_output(cmd)
+  print output
 
 # Exec the Maxwell startup script, with the required arguments
 os.execlp("./bin/maxwell",
