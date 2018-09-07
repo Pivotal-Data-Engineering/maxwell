@@ -62,14 +62,6 @@ primary key | `_id`
    $ cf start maxwell && cf logs maxwell
    ```
 
-## FIXME / TODO
-- Solve the DNS issue:
-  ```
-  2018-09-05T14:22:19.40-0400 [APP/PROC/WEB/0] ERR 18:22:19,400 ERROR MaxwellElasticsearchProducer - Exception during put
-  2018-09-05T14:22:19.40-0400 [APP/PROC/WEB/0] ERR com.mashape.unirest.http.exceptions.UnirestException: java.net.UnknownHostException: d9709b5.service.dc1.a9s-elasticsearch-consul: Name or service not known
-  2018-09-05T14:22:19.40-0400 [APP/PROC/WEB/0] ERR 	at com.mashape.unirest.http.HttpClientHelper.request(HttpClientHelper.java:143) ~[unirest-java-1.4.9.jar:?]
-  ```
-
 ## OPTIONAL steps
 - Create an SSH tunnel so it can be reached by your computer:
   ```

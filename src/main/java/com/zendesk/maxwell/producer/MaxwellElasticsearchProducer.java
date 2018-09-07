@@ -7,9 +7,6 @@ import com.mashape.unirest.http.Unirest;
 import com.zendesk.maxwell.MaxwellContext;
 import com.zendesk.maxwell.row.RowMap;
 
-import java.security.KeyManagementException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,14 +32,22 @@ public class MaxwellElasticsearchProducer extends AbstractProducer {
 		elasticUser = context.getConfig().elasticUser;
 		elasticPassword = context.getConfig().elasticPassword;
 		mapper = new ObjectMapper();
-		try {
-			httpClient = HttpClients.custom()
-			.setSSLContext(new SSLContextBuilder().loadTrustMaterial(null, (x509Certificates, s) -> true).build())
-			.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
+		// Toggle SSL cert verification by setting this environment variable to true or
+		// false
+		boolean verifySSL = Boolean.parseBoolean(System.getenv("VERIFY_ES_SSL"));
+		if (verifySSL) {
+			httpClient = HttpClients.createDefault();
+		} else {
+			try {
+				httpClient = HttpClients.custom()
+						.setSSLContext(
+								new SSLContextBuilder().loadTrustMaterial(null, (x509Certificates, s) -> true).build())
+						.setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		}
-		System.out.printf("ES URL: %s, ES user: %s, ES password: %s\n", elasticUrl, elasticUser, elasticPassword);
+		logger.info(String.format("ES URL: %s, ES user: %s, ES password: %s\n", elasticUrl, elasticUser, elasticPassword));
 	}
 
 	private Map<String, Object> mapRemoveNulls(Map<String, Object> map) {
@@ -62,8 +67,9 @@ public class MaxwellElasticsearchProducer extends AbstractProducer {
 		}
 
 		/*
-		 * Avoid verification of server SSL certificate  Per the link below, it appears this must
-		 * occur before every HTTP operation: https://github.com/Kong/unirest-java/issues/195
+		 * Avoid verification of server SSL certificate Per the link below, it appears
+		 * this must occur before every HTTP operation:
+		 * https://github.com/Kong/unirest-java/issues/195
 		 */
 		Unirest.setHttpClient(httpClient);
 
@@ -81,7 +87,7 @@ public class MaxwellElasticsearchProducer extends AbstractProducer {
 				HttpResponse<JsonNode> jsonResponse = Unirest.put(url).basicAuth(elasticUser, elasticPassword)
 						.header("accept", "application/json").header("Content-Type", "application/json")
 						.body(dataMapJSON).asJson();
-				System.out.printf("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus());
+				logger.info(String.format("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus()));
 			} else if ("UPDATE".equalsIgnoreCase(op)) {
 				String url = String.format("%s/%s/%s/%s/_update", elasticUrl, esIndex, esType, pk);
 				Map<String, Object> newDataMap = mapRemoveNulls(r.getData());
@@ -91,23 +97,21 @@ public class MaxwellElasticsearchProducer extends AbstractProducer {
 				for (String key : oldDataMap.keySet()) {
 					changedDataMap.put(key, newDataMap.get(key));
 				}
-				// For an UPDATE, Elasticsearch requires a data structure like:
-				// { "doc": { ... }}
 				Map<String, Map<String, Object>> docMap = new HashMap<>();
 				docMap.put("doc", changedDataMap);
 				String dataMapJSON = mapper.writeValueAsString(docMap);
 				HttpResponse<JsonNode> jsonResponse = Unirest.post(url).basicAuth(elasticUser, elasticPassword)
 						.header("accept", "application/json").header("Content-Type", "application/json")
 						.body(dataMapJSON).asJson();
-				System.out.printf("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus());
+				logger.info(String.format("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus()));
 			} else if ("DELETE".equalsIgnoreCase(op)) {
 				String url = String.format("%s/%s/%s/%s", elasticUrl, esIndex, esType, pk);
 				HttpResponse<JsonNode> jsonResponse = Unirest.delete(url).basicAuth(elasticUser, elasticPassword)
 						.header("accept", "application/json").asJson();
-				System.out.printf("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus());
+				logger.info(String.format("Response body: %s, status: %d\n", jsonResponse.getBody(), jsonResponse.getStatus()));
 			}
 			// TODO: Handle TRUNCATE? What about DROP TABLE?
-			System.out.printf("PK: %s, ES index: %s, ES type: %s, OP: %s, msg: %s\n", pk, esIndex, esType, op, msg);
+			logger.info(String.format("PK: %s, ES index: %s, ES type: %s, OP: %s, msg: %s\n", pk, esIndex, esType, op, msg));
 			this.succeededMessageCount.inc();
 			this.succeededMessageMeter.mark();
 		} catch (Exception e) {
@@ -121,10 +125,6 @@ public class MaxwellElasticsearchProducer extends AbstractProducer {
 
 		if (r.isTXCommit()) {
 			context.setPosition(r.getNextPosition());
-		}
-
-		if (logger.isDebugEnabled()) {
-			logger.debug("message ...");
 		}
 	}
 }

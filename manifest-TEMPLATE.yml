@@ -11,6 +11,7 @@ applications:
   no-route: true
   env:
     JBP_CONFIG_JAVA_MAIN: '{java_main_class: "DoesNotMatter"}' # Placebo for Java buildpack
+    VERIFY_ES_SSL: false
     ES_SERVICE_KEY: a9s-elasticsearch6
     MAXWELL_USER: <USER YOU GRANTED PERMISSION TO FOR THE BINLOGS> 
     MAXWELL_PASSWORD: <PASSWORD FOR THIS USER>
