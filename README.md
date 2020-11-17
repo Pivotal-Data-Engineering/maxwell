@@ -1,4 +1,4 @@
-# Maxwell's Daemon
+<h1> VMware has ended active development of this project, this repository will no longer be updated.</h1><br># Maxwell's Daemon
 
 This is Maxwell's daemon, an application that reads MySQL binlogs and writes
 row updates to Kafka, Kinesis, RabbitMQ, Google Cloud Pub/Sub, Redis (Pub/Sub
